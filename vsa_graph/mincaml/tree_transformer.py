@@ -40,12 +40,7 @@ class Tree2Syntax(Transformer):
 
     def letrec_expr(self, args: _AnyList) -> syn.Syntax:
         return syn.LetRec(
-            syn.Fundef(
-                (args[0], typ.gentyp()),
-                [],
-                args[1][0]
-            ),
-            args[2][0]
+            syn.Fundef((args[0], typ.gentyp()), [], args[1][0]), args[2][0]
         )
 
     def tuple_expr(self, args: _AnyList) -> syn.Syntax:
@@ -54,8 +49,8 @@ class Tree2Syntax(Transformer):
     def seq_expr(self, args: _AnyList) -> syn.Syntax:
         return syn.Seq([arg[0] for arg in args])
 
-    def expr(self, args: _AnyList) -> syn.Syntax: 
-        return args #type: ignore
+    def expr(self, args: _AnyList) -> syn.Syntax:
+        return args  # type: ignore
 
     def app_expr(self, args: _AnyList) -> syn.Syntax:
         return syn.App(args[0], [arg.children for arg in args[1:]][0])
