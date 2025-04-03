@@ -1,2 +1,2 @@
-./.venv/bin/black ./src -l79
-./.venv/bin/mypy ./src --strict
+./.venv/bin/black ./vsa_graph -l79
+./.venv/bin/mypy ./vsa_graph --strict

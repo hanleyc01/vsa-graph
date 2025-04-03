@@ -5,6 +5,8 @@ import string
 
 from vsa.hrr import HRR
 from graph.async_graph import Bind, Graph, UserInput, Connection, Node, Add
+from mincaml.grammar import parse
+from mincaml.tree_transformer import transform
 import typing as t
 
 from pprint import pprint
@@ -33,7 +35,7 @@ def gen_powers_of_2(powers: int, dim: int) -> t.Tuple[Graph, t.Dict[str, HRR]]:
     for lhs, rhs in zip(input_iter, input_iter):
         lvl1.append(
             Connection(
-                [("out", lhs), ("out", rhs)], Add(new_label("add"), dim)
+                [("out", lhs), ("out", rhs)], Bind(new_label("add"), dim)
             )
         )
     levels.append(lvl1)
@@ -44,7 +46,7 @@ def gen_powers_of_2(powers: int, dim: int) -> t.Tuple[Graph, t.Dict[str, HRR]]:
         for lhs, rhs in zip(previous_level_iter, previous_level_iter):
             lvl.append(
                 Connection(
-                    [("out", lhs), ("out", rhs)], Add(new_label("add"), dim)
+                    [("out", lhs), ("out", rhs)], Bind(new_label("add"), dim)
                 )
             )
         levels.append(lvl)
@@ -52,9 +54,9 @@ def gen_powers_of_2(powers: int, dim: int) -> t.Tuple[Graph, t.Dict[str, HRR]]:
     return Graph(levels), codebook
 
 
-async def main() -> None:
+async def async_main() -> None:
     dim = 100
-    powers = 13
+    powers = 5
     cgraph, codebook = gen_powers_of_2(powers, dim)
     start = time.time()
     await cgraph.run()
@@ -66,5 +68,12 @@ async def main() -> None:
     print(HRR.similarity(codebook["x0"].data, last_out))
 
 
+def main() -> None:
+    test_str = "foo_ bar bazz"
+    ast_tree = parse(test_str)
+    print(ast_tree.pretty(indent_str="."))
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    # asyncio.run(async_main())
+    main()

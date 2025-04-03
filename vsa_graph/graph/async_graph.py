@@ -1,16 +1,14 @@
 from __future__ import annotations
 
+import asyncio
 import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-import asyncio
+from threading import Thread
 
 import numpy as np
 import numpy.typing as npt
-
 from vsa.hrr import HRR
-
-from threading import Thread
 
 
 @dataclass
@@ -42,7 +40,9 @@ class Graph:
 type Label = str
 """Type alias for `str`"""
 type ConnectionItem = t.Tuple[Label, Node]
-"""Type alias for `tuple[Label, Node]`"""
+"""A `ConnectionItem` contains label name for the output buffer of the 
+incoming node to a connection, and the Node itself.
+"""
 
 
 @dataclass

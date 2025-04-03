@@ -6,13 +6,14 @@ For the reference implementation, see
 
 from __future__ import annotations
 
-from . import vsa
-
-import numpy as np
-from numpy.fft import fft, ifft
-import numpy.typing as npt
 import math
 import typing as t
+
+import numpy as np
+import numpy.typing as npt
+from numpy.fft import fft, ifft
+
+from . import vsa
 
 
 class HRR(vsa.VSA[np.float64]):

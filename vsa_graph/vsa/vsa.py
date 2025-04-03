@@ -3,9 +3,10 @@
 Module defining the abstract base class of `VSA`s.
 """
 
-from abc import ABCMeta, abstractmethod
-import numpy.typing as npt
 import typing as t
+from abc import ABCMeta, abstractmethod
+
+import numpy.typing as npt
 
 
 class VSA[T: t.Any](metaclass=ABCMeta):

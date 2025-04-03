@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import typing as t
 from abc import ABC, abstractmethod
 from copy import deepcopy
@@ -6,34 +7,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import numpy.typing as npt
-
 from vsa.hrr import HRR
-
-# optimization here is to enforce the computational graph as a DAG;
-# if it is a dag, we can run branches asynchronously, and then block on join
-# points.
-#
-# The rough idea is something like this
-#
-# Run async           Async again
-# ┌─┬────────►┌─────┬────────────►┌─┬───────►┌─┐
-# └─┘         │     │             └─┘        └─┘
-# ┌─┬────────►│     │                        ▲
-# └─┘         │     ├────────────►┌─┐        │
-# ┌─┬────────►│     │             └─┴────────┘
-# └─┘         └─────┴────────────►┌─┬───────►┌─┐
-#            Block on             └─┘        └─┘
-#
-# In human terms: we'd run branches asynchronously and await their output
-# at joining nodes or if they are a final output node.
-#
-# We might also want to think about directed graphs *in general*, as they
-# would allow for complete computational specification.
-
-# One way that we could go about doing this is to organize the graph by depth.
-# This would, of course, put the onus on the user to be safe, but the idea here
-# is that each depth of the graph would be connections which can be
-# safely run in parallel.
 
 
 @dataclass
@@ -53,6 +27,7 @@ class Graph:
 
 
 type Label = str
+"""Type alias for str."""
 
 type ConnectionItem = t.Tuple[Label, Node]
 """A `ConnectionItem` contains label name for the output buffer of the 
@@ -88,6 +63,15 @@ class Connection:
 
 
 class Node(ABC):
+    """Abstract base class of Nodes in the computational graph.
+
+    Each subclass of Node must have the following class members and methods,
+    though does not need to implement them.
+
+    Warning: labels of buffers should not have conflicting names! This will
+    mess up feeding forwards.
+    """
+
     label: Label
 
     @abstractmethod
@@ -97,28 +81,14 @@ class Node(ABC):
     def __getitem__(self, key: str) -> npt.NDArray[t.Any]: ...
 
 
-type LabelBuffer = t.Tuple[Label, npt.NDArray[np.float64]]
-
-_label_count = -1
-
-
-def _fresh_label(x: str) -> Label:
-    global _label_count
-    _label_count += 1
-    return f"{x}{_label_count}"
-
-
 class Bind(Node):
     label: Label
     dim: int
     input_buffers: t.Dict[Label, npt.NDArray[np.float64]]
     output_buffers: t.Dict[Label, npt.NDArray[np.float64]]
 
-    def __init__(self, dim: int, label: Label | None = None) -> None:
-        if label is None:
-            self.label = _fresh_label("Bind")
-        else:
-            self.label = label
+    def __init__(self, label: Label, dim: int) -> None:
+        self.label = label
         self.dim = dim
 
         self.input_buffers = {"lhs": np.zeros(dim), "rhs": np.zeros(dim)}

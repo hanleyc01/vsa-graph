@@ -1,3 +1,8 @@
+# Notice!
+
+This project is currently under construction. It doesn't do anything as of yet,
+nor is it a complete library.
+
 # vsa-graph
 
 `vsa-graph` is a graph compiler interpretation of our VSA programming lanugage
@@ -64,7 +69,7 @@ For personal hacking or any commits, any commit must be formatted using
 
 # Logbook
 
-## 2025-04-3: Beginning
+## 2025-04-2: Beginning
 
 Currently the basics of the graph system are laid out, as well as an 
 implementation of (1) an abstract base class for VSAs, (2) HRRs. There is
@@ -80,3 +85,13 @@ constraints on the kind of graph you can make. It's the wild west of freedom,
 so there's nothing stopping users from making terrible graphs with terrible
 performance. Figuring out how to constrain the user into making interpretable
 graphs is a point of research.
+
+## 2025-04-3: Parsing
+
+Given we need to work with a small programming language to test out 
+our ideas, I've chosen [MinCaml](https://esumii.github.io/min-caml/index-e.html)
+as the language to test compilation with.
+
+Because parsing is the most annoying part of the compiler pipeline, we will
+be using the `Lark` package. This adds support for `LALR` grammar definition
+and parsing. The rudiments of this addition are found in `./vsa_graph/mincaml/`.

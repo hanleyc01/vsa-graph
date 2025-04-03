@@ -5,6 +5,7 @@ description = "VSA compiler tools"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "lark>=1.2.2",
     "numpy>=2.2.4",
 ]
 
