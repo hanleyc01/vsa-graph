@@ -33,8 +33,8 @@ having distinct _operators_ that are applied to arguments, that we instead
 identify the operators with _graph nodes_.
 
 This does not seem to be a novel approach. For example,
-(this project)[https://github.com/MahmudulAlam/Holographic-Reduced-Representations],
-as well as the (Neuromorphic Intermediate Representation)[https://neuroir.org/docs/working_with_nir.html].
+[this project](https://github.com/MahmudulAlam/Holographic-Reduced-Representations),
+as well as the [Neuromorphic Intermediate Representation](https://neuroir.org/docs/working_with_nir.html).
 We will not be using these tools, as they are complex in their own right
 and deserve their own research. However, in principle we ought to be
 able to take this code and translate it into NIR, as it is also a
@@ -42,7 +42,7 @@ graph-based approach.
 
 # Running and hacking
 
-To run, you must install (uv)[https://docs.astral.sh/uv/]. On Mac and Linux,
+To run, you must install [uv](https://docs.astral.sh/uv/). On Mac and Linux,
 it is:
 ```sh
 curl -LsSf https://astral.sh/uv/install.sh | sh
