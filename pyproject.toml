@@ -1,0 +1,15 @@
+[project]
+name = "vsa-graph"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy>=2.2.4",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "mypy>=1.15.0",
+]
