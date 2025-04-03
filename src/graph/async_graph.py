@@ -15,9 +15,19 @@ from threading import Thread
 
 @dataclass
 class Graph:
+    """Asynchronous Graph of edges between nodes.
+
+    Args:
+        connections (list[list[Connection]]): Jagged list for graph depth.
+            Connections at the same depth will be called concurrently.
+    """
+
     connections: t.List[t.List[Connection]]
 
     async def run(self) -> None:
+        """Feeds the specified buffer labels of the input nodes to the output
+        node's `__call__` method as a list.
+        """
         # print("Running the graph")
 
         for index, depth in enumerate(self.connections):
@@ -30,15 +40,32 @@ class Graph:
 
 
 type Label = str
+"""Type alias for `str`"""
 type ConnectionItem = t.Tuple[Label, Node]
+"""Type alias for `tuple[Label, Node]`"""
 
 
 @dataclass
 class Connection:
+    """Edge between many input `Node`'s and an output `Node`.
+
+    Args:
+        items (list[tuple[Label, Node]]): A list of tuples with the first
+            member being the name of the buffer to pass to output and the
+            second being a reference to the Node itself. Note that items
+            are passed in the same order to `self.output_node.__call__`, in
+            order to support non-symmetric operations.
+        output_node (Node): The output node. Input node buffers are fed
+            as arguments to `self.output_node.__call__` method.
+    """
+
     items: t.List[ConnectionItem]
     output_node: Node
 
     async def feed(self) -> None:
+        """Feed the buffers from nodes given in `self.items` to
+        `self.output_node.__call__`.
+        """
         # print("feeding inputs to output node")
         input_buffers = []
         for buffer_label, input_node in self.items:
@@ -53,15 +80,37 @@ class Connection:
 
 
 class Node(ABC):
+    """Abstract base class of Nodes in the computational graph.
+
+    Each subclass of Node must have the following class members and methods,
+    though does not need to implement them.
+
+    Warning: labels of buffers should not have conflicting names! This will
+    mess up feeding forwards.
+    """
+
     label: Label
+    """
+    The name of the Node.
+    """
     input_buffers: t.Dict[Label, npt.NDArray[np.float64]]
+    """
+    The input buffers. To be modified in-place when `__call__` is called. 
+    Make sure to not contain references to other Nodes here, as Node's do not
+    guarantee that they will preserve their buffers.
+    """
     output_buffers: t.Dict[Label, npt.NDArray[np.float64]]
+    """The output buffer which is the result of `__call__`.
+    """
 
     @abstractmethod
-    async def __call__(self, items: t.List[npt.NDArray[t.Any]]) -> None: ...
+    async def __call__(self, items: t.List[npt.NDArray[t.Any]]) -> None:
+        """Perform some operation over `items` in order."""
+        ...
 
     @abstractmethod
-    def __getitem__(self, key: Label) -> npt.NDArray[t.Any]: ...
+    def __getitem__(self, key: Label) -> npt.NDArray[t.Any]:
+        """Search the Node's buffers for some buffer associated with `key`."""
 
 
 class Bind(Node):
