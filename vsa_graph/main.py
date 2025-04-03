@@ -68,10 +68,20 @@ async def async_main() -> None:
     print(HRR.similarity(codebook["x0"].data, last_out))
 
 
+test_expr = """
+let foo = bar in 
+let bazz = quux in
+let doo = blah in 
+cons foo
+"""
+
+
 def main() -> None:
-    test_str = "foo_ bar bazz"
-    ast_tree = parse(test_str)
-    print(ast_tree.pretty(indent_str="."))
+    test_str = "foo, bar"
+    ast_tree = parse(test_expr)
+    print(ast_tree.pretty())
+
+    print(transform(ast_tree))
 
 
 if __name__ == "__main__":

@@ -17,8 +17,8 @@ class Syntax(ABC):
 
 @dataclass
 class Fundef:
-    name: t.Tuple[str, Type]
-    args: t.List[t.Tuple[str, Type]]
+    name: t.Tuple[Ident, Type]
+    args: t.List[t.Tuple[Ident, Type]]
     body: Syntax
 
 
@@ -30,6 +30,16 @@ class Unit(Syntax):
 @dataclass
 class Bool(Syntax):
     value: bool
+
+
+@dataclass
+class String(Syntax):
+    data: str
+
+
+@dataclass
+class Ident(Syntax):
+    cont: str
 
 
 @dataclass(init=False)
@@ -147,14 +157,9 @@ class If(Syntax):
 
 @dataclass
 class Let(Syntax):
-    binding: t.Tuple[str, Type]
+    binding: t.Tuple[Ident, Type]
     expr: Syntax
     body: Syntax
-
-
-@dataclass
-class Var(Syntax):
-    name: str
 
 
 @dataclass
@@ -175,8 +180,13 @@ class Tuple(Syntax):
 
 
 @dataclass
+class Seq(Syntax):
+    elements: t.List[Syntax]
+
+
+@dataclass
 class LetTuple(Syntax):
-    bindings: t.List[t.Tuple[str, Type]]
+    bindings: t.List[t.Tuple[Ident, Type]]
     expr: Syntax
     body: Syntax
 
