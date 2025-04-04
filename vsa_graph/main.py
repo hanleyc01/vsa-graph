@@ -1,12 +1,14 @@
+"""Faux main used as a scratch pad."""
+
 import time
 import asyncio
 import numpy as np
 import string
 
-from vsa.hrr import HRR
-from graph.async_graph import Bind, Graph, UserInput, Connection, Node, Add
-from mincaml.grammar import parse
-from mincaml.tree_transformer import transform
+from .vsa.hrr import HRR
+from .graph.async_graph import Bind, Graph, UserInput, Connection, Node, Add
+from .mincaml.grammar import parse
+from .mincaml.tree_transformer import transform
 import typing as t
 
 from pprint import pprint
@@ -55,13 +57,15 @@ def gen_powers_of_2(powers: int, dim: int) -> t.Tuple[Graph, t.Dict[str, HRR]]:
 
 
 async def async_main() -> None:
-    dim = 100
+    dim = 320
     powers = 5
     cgraph, codebook = gen_powers_of_2(powers, dim)
     start = time.time()
     await cgraph.run()
     end = time.time()
-    print(f"time for execution: {end-start}")
+    print(
+        f"time for execution of iterated binding of {2**powers} items: {end-start}"
+    )
 
     last_out = cgraph.connections[-1][0].output_node["out"]
     print(last_out)
@@ -81,7 +85,7 @@ def main() -> None:
     ast_tree = parse(test_expr)
     print(ast_tree.pretty())
 
-    print(transform(ast_tree))
+    pprint(transform(ast_tree))
 
 
 if __name__ == "__main__":

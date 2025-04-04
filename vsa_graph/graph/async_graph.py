@@ -8,7 +8,7 @@ from threading import Thread
 
 import numpy as np
 import numpy.typing as npt
-from vsa.hrr import HRR
+from vsa_graph.vsa.hrr import HRR
 
 
 @dataclass
@@ -134,8 +134,8 @@ class Bind(Node):
             ), f"expected dim: {self.dim} got {item.size}"
 
         def bind() -> npt.NDArray[np.float64]:
-            self.input_buffers["lhs"][:] = inputs[0]
-            self.input_buffers["rhs"][:] = inputs[1]
+            self.input_buffers["lhs"] = inputs[0]
+            self.input_buffers["rhs"] = inputs[1]
             return HRR.bind(
                 self.input_buffers["lhs"], self.input_buffers["rhs"]
             )

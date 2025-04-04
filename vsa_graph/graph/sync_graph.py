@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import numpy.typing as npt
-from vsa.hrr import HRR
+from vsa_graph.vsa.hrr import HRR
 
 
 @dataclass
