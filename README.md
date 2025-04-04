@@ -64,7 +64,16 @@ uv run ./src/main.py
 ```
 
 For personal hacking or any commits, any commit must be formatted using
-`black` as well as pass `mypy --strict`.
+`black` as well as pass `mypy --strict`. Similarly, if adding a
+new feature or changing the functioning of some module, make sure to add
+the following:
+
+1. Update or add documentation to reflect the changes.
+2. Write unit tests in the respective `test_*.py` file.
+3. Ensure that these all pass.
+
+To make this easier, a small bash script `./build.sh` has been provided
+that auto-runs the formatter, type-checker, and tests.
 
 
 # Logbook

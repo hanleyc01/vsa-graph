@@ -10,6 +10,7 @@ import vsa_graph.mincaml.types as typ
 type _AnyList = t.List[t.Any]
 
 
+# Helper function for dealing the polymorphic contents of tree children.
 def _get_expr(x: t.Any) -> syn.Syntax:
     if isinstance(x, list):
         return _get_expr(x[0])
@@ -20,6 +21,9 @@ def _get_expr(x: t.Any) -> syn.Syntax:
 
 
 class Tree2Syntax(Transformer[t.Any, syn.Syntax]):
+    """Tree transformer that converts the `lark.Tree` produced by the
+    parsing stage into an abstract syntax tree.
+    """
 
     def start(self, args: _AnyList) -> syn.Syntax:
         return t.cast(syn.Syntax, args[0])
@@ -63,7 +67,7 @@ class Tree2Syntax(Transformer[t.Any, syn.Syntax]):
         return syn.Seq([_get_expr(arg[0]) for arg in args])
 
     def expr(self, args: _AnyList) -> syn.Syntax:
-        return args  # type: ignore
+        return t.cast(syn.Syntax, args)
 
     def app_expr(self, args: _AnyList) -> syn.Syntax:
         return syn.App(args[0], [arg.children for arg in args[1:]][0])

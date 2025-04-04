@@ -17,6 +17,7 @@ from lark import Lark, Tree, logger
 logger.setLevel(logging.WARN)
 
 
+# Grammar of the subset of the language. Should mirror `./grammar.lark`.
 _GRAMMAR = """
 // simple grammar for reference specification, see 
 // https://esumii.github.io/min-caml/index-e.html
@@ -60,10 +61,11 @@ ident: CNAME "_"
 """
 
 
-parser = Lark(grammar=_GRAMMAR)
+# Lark parser generated from the provided grammar.
+_parser = Lark(grammar=_GRAMMAR)
 
 
 def parse(text: str) -> Tree[t.Any]:
     """Parse a string into a `lark.Tree` representation."""
-    tree = parser.parse(text)
+    tree = _parser.parse(text)
     return tree

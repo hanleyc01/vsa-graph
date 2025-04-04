@@ -52,6 +52,9 @@ class Connection:
     output_node: Node
 
     def forward(self) -> None:
+        """Feed the buffers specified in `self.input_nodes` to `self.output_node.__call__`.
+        Note that order is preserved.
+        """
         print("Graph forward!")
         input_args = []
         for output_buffer_label, node in self.input_nodes:
@@ -73,15 +76,38 @@ class Node(ABC):
     """
 
     label: Label
+    """
+    The name of the Node.
+    """
+    input_buffers: t.Dict[Label, npt.NDArray[np.float64]]
+    """
+    Named input buffers, which hold immutable references to buffers from
+    other nodes.
+    """
+    output_buffers: t.Dict[Label, npt.NDArray[np.float64]]
+    """The output buffer which is the result of `__call__`.
+    """
 
     @abstractmethod
-    def __call__(self, inputs: t.List[npt.NDArray[t.Any]]) -> None: ...
+    def __call__(self, inputs: t.List[npt.NDArray[t.Any]]) -> None:
+        """Use `inputs` in some operation, putting the result in
+        `self.output_buffers["out"]`.
+        """
+        ...
 
     @abstractmethod
-    def __getitem__(self, key: str) -> npt.NDArray[t.Any]: ...
+    def __getitem__(self, key: str) -> npt.NDArray[t.Any]:
+        """Retrieve a buffer by label `key`."""
+        ...
 
 
 class Bind(Node):
+    """A HRR binding node.
+
+    HRR binding is implemented through circular convolution of the input
+    buffers, outputting the result in `self.output_buffer["out"]`.
+    """
+
     label: Label
     dim: int
     input_buffers: t.Dict[Label, npt.NDArray[np.float64]]
@@ -95,7 +121,11 @@ class Bind(Node):
         self.output_buffers = {"out": np.zeros(dim)}
 
     def __getitem__(self, key: Label) -> npt.NDArray[np.float64]:
-        return self.output_buffers[key]
+        input_buff = self.input_buffers.get(key)
+        if input_buff is None:
+            return self.output_buffers[key]
+        else:
+            return input_buff
 
     def __call__(self, inputs: t.List[npt.NDArray[np.float64]]) -> None:
         assert len(inputs) == 2, "nargs of bind == 2"
@@ -104,11 +134,8 @@ class Bind(Node):
                 self.dim == item.size
             ), f"expected dim: {self.dim} got {item.size}"
 
-        for i in range(inputs[0].size):
-            self.input_buffers["lhs"][i] = inputs[0][i]
-
-        for i in range(inputs[1].size):
-            self.input_buffers["rhs"][i] = inputs[1][i]
+        self.input_buffers["lhs"] = inputs[0]
+        self.input_buffers["rhs"] = inputs[1]
 
         self.output_buffers["out"] = HRR.bind(
             self.input_buffers["lhs"], self.input_buffers["rhs"]
@@ -122,6 +149,11 @@ class Bind(Node):
 
 
 class UserInput(Node):
+    """User input computational graph node.
+
+    Used for prespecifying inputs to a computational graph.
+    """
+
     label: Label
     buffer: t.Dict[Label, npt.NDArray[t.Any]]
     dim: int
@@ -131,8 +163,12 @@ class UserInput(Node):
         self.buffer = {"out": input}
         self.dim = input.size
 
-    def __getitem__(self, key: str) -> npt.NDArray[t.Any]:
-        return self.buffer[key]
+    def __getitem__(self, key: Label) -> npt.NDArray[np.float64]:
+        input_buff = self.input_buffers.get(key)
+        if input_buff is None:
+            return self.output_buffers[key]
+        else:
+            return input_buff
 
     def __call__(self, items: t.List[npt.NDArray[t.Any]]) -> None:
         raise NotImplementedError("bad")

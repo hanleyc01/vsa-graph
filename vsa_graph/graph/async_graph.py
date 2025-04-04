@@ -95,9 +95,8 @@ class Node(ABC):
     """
     input_buffers: t.Dict[Label, npt.NDArray[np.float64]]
     """
-    The input buffers. To be modified in-place when `__call__` is called. 
-    Make sure to not contain references to other Nodes here, as Node's do not
-    guarantee that they will preserve their buffers.
+    Named input buffers, which hold immutable references to buffers from
+    other nodes.
     """
     output_buffers: t.Dict[Label, npt.NDArray[np.float64]]
     """The output buffer which is the result of `__call__`.
@@ -114,6 +113,12 @@ class Node(ABC):
 
 
 class Bind(Node):
+    """A HRR binding node.
+
+    HRR binding is implemented through circular convolution of the input
+    buffers, outputting the result in `self.output_buffer["out"]`.
+    """
+
     label: Label
     dim: int
     input_buffers: t.Dict[Label, npt.NDArray[np.float64]]
@@ -164,6 +169,12 @@ class Bind(Node):
 
 
 class Add(Node):
+    """A HRR bundle node.
+
+    HRR bundling is implemented by element-wise addition between the
+    input nodes, and put in `self.output_buffers["out"]`.
+    """
+
     label: Label
     dim: int
     input_buffers: t.Dict[Label, npt.NDArray[np.float64]]
@@ -213,6 +224,11 @@ class Add(Node):
 
 
 class UserInput(Node):
+    """User input computational graph node.
+
+    Used for prespecifying inputs to a computational graph.
+    """
+
     label: Label
     input_buffers: t.Dict[Label, npt.NDArray[np.float64]]
     output_buffers: t.Dict[Label, npt.NDArray[np.float64]]
