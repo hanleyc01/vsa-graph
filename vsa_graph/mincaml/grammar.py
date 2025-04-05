@@ -19,9 +19,6 @@ logger.setLevel(logging.WARN)
 
 # Grammar of the subset of the language. Should mirror `./grammar.lark`.
 _GRAMMAR = """
-// simple grammar for reference specification, see 
-// https://esumii.github.io/min-caml/index-e.html
-
 start: expr
 
 expr: simple_expr
@@ -33,6 +30,7 @@ expr: simple_expr
     | "let" "(" pat ")" "=" expr "in" expr -> let_pattern_expr
     | expr ("," expr)+ -> tuple_expr
     | expr (";" expr)+ -> seq_expr
+    | "fun" ident+ "=>" expr -> fun_expr
 
 ?simple_expr: "true" -> true_expr
     | "false" -> false_expr
