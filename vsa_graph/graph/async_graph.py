@@ -39,10 +39,6 @@ class Graph:
 
 type Label = str
 """Type alias for `str`"""
-type ConnectionItem = t.Tuple[Label, Node]
-"""A `ConnectionItem` contains label name for the output buffer of the 
-incoming node to a connection, and the Node itself.
-"""
 
 
 @dataclass
@@ -59,7 +55,7 @@ class Connection:
             as arguments to `self.output_node.__call__` method.
     """
 
-    items: t.List[ConnectionItem]
+    input_nodes: t.List[Node]
     output_node: Node
 
     async def feed(self) -> None:
@@ -68,10 +64,10 @@ class Connection:
         """
         # print("feeding inputs to output node")
         input_buffers = []
-        for buffer_label, input_node in self.items:
+        for node in self.input_nodes:
             # print(f"getting {buffer_label} from {input_node.label}")
             # print(f"{input_node[buffer_label] = }")
-            input_buffers.append(input_node[buffer_label])
+            input_buffers.append(node.output_buffer)
 
         # print(
         #     f"calling {self.output_node.label} with nargs {len(input_buffers)}"
@@ -93,12 +89,7 @@ class Node(ABC):
     """
     The name of the Node.
     """
-    input_buffers: t.Dict[Label, npt.NDArray[np.float64]]
-    """
-    Named input buffers, which hold immutable references to buffers from
-    other nodes.
-    """
-    output_buffers: t.Dict[Label, npt.NDArray[np.float64]]
+    output_buffer: npt.NDArray[t.Any]
     """The output buffer which is the result of `__call__`.
     """
 
@@ -106,10 +97,6 @@ class Node(ABC):
     async def __call__(self, items: t.List[npt.NDArray[t.Any]]) -> None:
         """Perform some operation over `items` in order."""
         ...
-
-    @abstractmethod
-    def __getitem__(self, key: Label) -> npt.NDArray[t.Any]:
-        """Search the Node's buffers for some buffer associated with `key`."""
 
 
 class Bind(Node):
@@ -121,15 +108,13 @@ class Bind(Node):
 
     label: Label
     dim: int
-    input_buffers: t.Dict[Label, npt.NDArray[np.float64]]
-    output_buffers: t.Dict[Label, npt.NDArray[np.float64]]
+    output_buffer: npt.NDArray[np.float64]
 
     def __init__(self, label: str, dim: int) -> None:
         self.label = label
         self.dim = dim
 
-        self.input_buffers = {"lhs": np.zeros(dim), "rhs": np.zeros(dim)}
-        self.output_buffers = {"out": np.zeros(dim)}
+        self.output_buffer = np.zeros(dim)
 
     async def __call__(self, inputs: t.List[npt.NDArray[np.float64]]) -> None:
         assert len(inputs) == 2, "nargs of bind == 2"
@@ -139,33 +124,16 @@ class Bind(Node):
             ), f"expected dim: {self.dim} got {item.size}"
 
         def bind() -> npt.NDArray[np.float64]:
-            self.input_buffers["lhs"] = inputs[0]
-            self.input_buffers["rhs"] = inputs[1]
-            return HRR.bind(
-                self.input_buffers["lhs"], self.input_buffers["rhs"]
-            )
+            return HRR.bind(inputs[0], inputs[1])
 
-        self.output_buffers["out"] = (
-            await asyncio.get_event_loop().run_in_executor(None, bind)
+        self.output_buffer = await asyncio.get_event_loop().run_in_executor(
+            None, bind
         )
 
         # print(f"for {self.label}, {self.output_buffers["out"] =}")
 
-        self.__post_call__()
-
-    def __post_call__(self) -> None:
-        for key in self.input_buffers.keys():
-            self.input_buffers[key] = np.zeros(self.dim)
-
     def __repr__(self) -> str:
         return f"Bind(label: {self.label})"
-
-    def __getitem__(self, key: Label) -> npt.NDArray[np.float64]:
-        input_buff = self.input_buffers.get(key)
-        if input_buff is None:
-            return self.output_buffers[key]
-        else:
-            return input_buff
 
 
 class Add(Node):
@@ -177,19 +145,12 @@ class Add(Node):
 
     label: Label
     dim: int
-    input_buffers: t.Dict[Label, npt.NDArray[np.float64]]
-    output_buffers: t.Dict[Label, npt.NDArray[np.float64]]
+    output_buffer: npt.NDArray[np.float64]
 
     def __init__(self, label: Label, dim: int) -> None:
         self.label = label
         self.dim = dim
-        self.input_buffers = {
-            "lhs": np.zeros(dim),
-            "rhs": np.zeros(dim),
-        }
-        self.output_buffers = {
-            "out": np.zeros(dim),
-        }
+        self.output_buffer = np.zeros(dim)
 
     async def __call__(self, inputs: t.List[npt.NDArray[np.float64]]) -> None:
         assert len(inputs) == 2, "nargs of bind == 2"
@@ -199,53 +160,32 @@ class Add(Node):
             ), f"expected dim: {self.dim} got {item.size}"
 
         def add() -> npt.NDArray[np.float64]:
-            self.input_buffers["lhs"][:] = inputs[0]
-            self.input_buffers["rhs"][:] = inputs[1]
-            return HRR.bundle(
-                self.input_buffers["lhs"], self.input_buffers["rhs"]
-            )
+            return HRR.bundle(inputs[0], inputs[1])
 
-        self.output_buffers["out"] = (
+        self.output_buffer = (
             await asyncio.get_event_loop().run_in_executor(None, add)
         )
 
-        self.__post_call__()
 
-    def __post_call__(self) -> None:
-        for key in self.input_buffers.keys():
-            self.input_buffers[key] = np.zeros(self.dim)
-
-    def __getitem__(self, key: Label) -> npt.NDArray[np.float64]:
-        input_buff = self.input_buffers.get(key)
-        if input_buff is None:
-            return self.output_buffers[key]
-        else:
-            return input_buff
-
-
-class UserInput(Node):
-    """User input computational graph node.
+class Vec[T: t.Any](Node):
+    """Vector of type `T`.
 
     Used for prespecifying inputs to a computational graph.
     """
 
     label: Label
-    input_buffers: t.Dict[Label, npt.NDArray[np.float64]]
-    output_buffers: t.Dict[Label, npt.NDArray[np.float64]]
+    output_buffer: npt.NDArray[T]
     dim: int
 
-    def __init__(self, label: str, input: npt.NDArray[t.Any]) -> None:
+    def __init__(self, label: str, input: npt.NDArray[T]) -> None:
         self.label = label
-        self.input_buffers = {}
-        self.output_buffers = {"out": input}
+        self.output_buffer = input
         self.dim = input.size
 
-    async def __call__(self, items: t.List[npt.NDArray[t.Any]]) -> None:
+    async def __call__(self, items: t.List[npt.NDArray[T]]) -> None:
         raise NotImplementedError("bad")
 
-    def __getitem__(self, key: Label) -> npt.NDArray[t.Any]:
-        input_buff = self.input_buffers.get(key)
-        if input_buff is None:
-            return self.output_buffers[key]
-        else:
-            return input_buff
+
+
+VecF64 = Vec[np.float64]
+"""Vector node of type `np.float64`."""

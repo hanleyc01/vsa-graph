@@ -5,10 +5,11 @@ import asyncio
 import numpy as np
 import string
 
-from .vsa.hrr import HRR
-from .graph.async_graph import Bind, Graph, UserInput, Connection, Node, Add
-from .mincaml.grammar import parse
-from .mincaml.tree_transformer import transform
+from vsa_graph.vsa.hrr import HRR
+from vsa_graph.graph.async_graph import Bind, Graph, VecF64, Connection, Node, Add
+from vsa_graph.graph.graph_tools import display_async_graph
+from vsa_graph.mincaml.grammar import parse
+from vsa_graph.mincaml.tree_transformer import transform
 import typing as t
 
 from pprint import pprint
@@ -27,7 +28,7 @@ def gen_powers_of_2(powers: int, dim: int) -> t.Tuple[Graph, t.Dict[str, HRR]]:
     vocab = [new_label("x") for _ in range(2**powers)]
     codebook = {name: HRR.normal(dim) for name in vocab}
     user_inputs: t.List[Node] = [
-        UserInput(name, symbol.data) for name, symbol in codebook.items()
+        VecF64(name, symbol.data) for name, symbol in codebook.items()
     ]
 
     levels = []
@@ -37,7 +38,7 @@ def gen_powers_of_2(powers: int, dim: int) -> t.Tuple[Graph, t.Dict[str, HRR]]:
     for lhs, rhs in zip(input_iter, input_iter):
         lvl1.append(
             Connection(
-                [("out", lhs), ("out", rhs)], Bind(new_label("add"), dim)
+                [lhs, rhs], Bind(new_label("bind"), dim)
             )
         )
     levels.append(lvl1)
@@ -48,7 +49,7 @@ def gen_powers_of_2(powers: int, dim: int) -> t.Tuple[Graph, t.Dict[str, HRR]]:
         for lhs, rhs in zip(previous_level_iter, previous_level_iter):
             lvl.append(
                 Connection(
-                    [("out", lhs), ("out", rhs)], Bind(new_label("add"), dim)
+                    [lhs, rhs], Bind(new_label("bind"), dim)
                 )
             )
         levels.append(lvl)
@@ -57,8 +58,8 @@ def gen_powers_of_2(powers: int, dim: int) -> t.Tuple[Graph, t.Dict[str, HRR]]:
 
 
 async def async_main() -> None:
-    dim = 320
-    powers = 5
+    dim = 100
+    powers = 8
     cgraph, codebook = gen_powers_of_2(powers, dim)
     start = time.time()
     await cgraph.run()
@@ -66,17 +67,10 @@ async def async_main() -> None:
     print(
         f"time for execution of iterated binding of {2**powers} items: {end-start}"
     )
-
-    last_out = cgraph.connections[-1][0].output_node["out"]
-    print(last_out)
-    print(HRR.similarity(codebook["x0"].data, last_out))
-
+    display_async_graph(cgraph)
 
 test_expr = """
-let foo = bar in 
-let bazz = quux in
-let doo = blah in 
-cons foo
+cons foo bar
 """
 
 
@@ -89,5 +83,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    # asyncio.run(async_main())
-    main()
+    asyncio.run(async_main())
+    # main()
